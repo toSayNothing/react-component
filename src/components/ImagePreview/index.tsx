@@ -30,8 +30,6 @@ type ImagePreviewProps = { list: string[] }
 const M_LIST = [.2, .5, .8, 1, 1.2, 1.5, 1.8, 2, 2.2, 2.5, 2.8, 3]
 const DEFAULT_SCALE_INDEX = M_LIST.findIndex(i => i === 1)
 
-const CENTER_ORIGIN = { x: '50%', y: '50%' }
-
 export default function ImagePreview({ list }: ImagePreviewProps) {
   const toolSet: ToolSetItem[] = [
     'prev',
@@ -48,10 +46,10 @@ export default function ImagePreview({ list }: ImagePreviewProps) {
   const [isImgLoading, setIsImgLoading] = useState(true)
   const [deg, setDeg] = useState(0)
   const [scaleIndex, setScaleIndex] = useState(DEFAULT_SCALE_INDEX)
-  const [scaleOrigin, setScaleOrigin] = useState<{ x: string, y: string }>(CENTER_ORIGIN)
-  // 下一次放大缩小的原点 
-  const [nextScaleOrigin, setNextScaleOrigin] = useState<{ x: string, y: string }>(CENTER_ORIGIN)
+  const [startPointer, setStartPointer] = useState({ x: 0, y: 0 })
+  const [pointer, setPointer] = useState({ x: 0, y: 0 })
   const [isImgBiggerThanParent, setIsImgBiggerThanParent] = useState(false)
+  const [isPending, setIsPending] = useState(false)
 
   const onPrev = () => {
     console.log('onPrev')
@@ -73,24 +71,25 @@ export default function ImagePreview({ list }: ImagePreviewProps) {
     // setScale(v => v * M)
     if (scaleIndex === M_LIST.length - 1) return
     setScaleIndex(i => ++i)
-    setScaleOrigin({ ...nextScaleOrigin })
   }
   const onZoomOut = () => {
     console.log('onZoomOut')
     // setScale(v => v / M)
     if (scaleIndex === 0) return
     setScaleIndex(i => --i)
-    setScaleOrigin({ ...nextScaleOrigin })
   }
   const onWheel: React.WheelEventHandler = (e) => {
     const delta = Math.sign(e.deltaY);
+    const curScale = M_LIST[scaleIndex]
+    const xs = (e.clientX - pointer.x) / curScale;
+    const ys = (e.clientY - pointer.y) / curScale;
     delta > 0 ? onZoomOut() : onZoomIn()
+    // TODO
+    setPointer({ x: e.clientX - xs * M_LIST[scaleIndex + 1], y: e.clientY - ys * M_LIST[scaleIndex + 1] })
   }
   const onResetScale = () => {
     console.log('onResetScale')
     setScaleIndex(DEFAULT_SCALE_INDEX)
-    setScaleOrigin(CENTER_ORIGIN)
-    setNextScaleOrigin(CENTER_ORIGIN)
   }
   const onRotate = () => {
     console.log('onRotate')
@@ -104,20 +103,30 @@ export default function ImagePreview({ list }: ImagePreviewProps) {
 
   const onImgLoad = () => {
     setScaleIndex(DEFAULT_SCALE_INDEX)
-    setScaleOrigin(CENTER_ORIGIN)
     setDeg(0)
     setIsImgLoading(false)
   }
 
   const onImgDoubleClick = () => {
     setScaleIndex(DEFAULT_SCALE_INDEX)
-    setScaleOrigin(CENTER_ORIGIN)
   }
 
   const onImgMouseMove: React.MouseEventHandler = (e) => {
+    e.preventDefault()
+    if (!isPending) return
+    setPointer({ x: e.clientX - startPointer.x, y: e.clientY - startPointer.y })
     const { offsetX, offsetY } = e.nativeEvent
     console.log('onImgMouseMove', offsetX, offsetY)
-    setNextScaleOrigin({ x: `${offsetX}px`, y: `${offsetY}px` })
+  }
+  const onImgMouseUp: React.MouseEventHandler = (e) => {
+    console.log('onImgMouseUp', e)
+    setIsPending(false)
+  }
+  const onImgMouseDown: React.MouseEventHandler = (e) => {
+    console.log('onImgMouseDown', e)
+    e.preventDefault()
+    setStartPointer({ x: e.clientX - pointer.x, y: e.clientY - pointer.y })
+    setIsPending(true)
   }
 
   // 拦截组合键
@@ -157,6 +166,10 @@ export default function ImagePreview({ list }: ImagePreviewProps) {
     )
   }, [scaleIndex])
 
+  const transform = useMemo(() => {
+    return `scale(${M_LIST[scaleIndex]}) rotate(${deg}deg) translate(${pointer.x}px, ${pointer.y}px)`
+  }, [scaleIndex, deg, pointer])
+
   return (
     <ActionContext.Provider value={
       {
@@ -186,13 +199,14 @@ export default function ImagePreview({ list }: ImagePreviewProps) {
           style={{ backgroundColor: '#242526' }}
         >
           <img id="realImg" src={list[index]} alt="real-img" style={{
-            transform: `scale(${M_LIST[scaleIndex]}) rotate(${deg}deg)`,
-            transformOrigin: `${scaleOrigin.x} ${scaleOrigin.y}`,
+            transform,
             cursor: isImgBiggerThanParent ? 'grab' : 'auto'
           }}
             onLoad={onImgLoad}
             onDoubleClick={onImgDoubleClick}
             onMouseMove={onImgMouseMove}
+            onMouseUp={onImgMouseUp}
+            onMouseDown={onImgMouseDown}
           />
           {
             isImgLoading && <div className="absolute inset-0 flex items-center justify-center bg-gray-200 opacity-20">
