@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        padding-top: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .container {
+        position: relative;
+      }
+      .box {
+        position: absolute;
+        width: 200px;
+        height: 200px;
+      }
+      .box1 {
+        background-color: azure;
+        z-index: 3;
+      }
+      .box2 {
+        background-color: bisque;
+        transform: scale(2);
+        transform-origin: 0px 0px;
+        z-index: 2;
+      }
+      .box3 {
+        background-color: blueviolet;
+        transform: scale(3);
+        z-index: 1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="box box1"></div>
+      <div class="box box2"></div>
+      <div class="box box3"></div>
+    </div>
+    <script>
+      let el = document.getElementById("box");
+    </script>
+  </body>
+</html>

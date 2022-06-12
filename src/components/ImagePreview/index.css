@@ -1,0 +1,23 @@
+/* width */
+.imgWrapper::-webkit-scrollbar {
+  width:6px;
+  height: 6px;
+  /* border-radius: 10px; */
+}
+
+/* Track */
+.imgWrapper::-webkit-scrollbar-track {
+  background: transparent;
+  background-color: #242526;
+}
+
+/* Handle */
+.imgWrapper::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 10px;
+}
+
+/* Handle on hover */
+.imgWrapper::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
